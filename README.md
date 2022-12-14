@@ -1,1 +1,4 @@
-# memetics19-mac-automation-ansible
+# mac-automation-ansible
+
+
+Automate the mac
