@@ -1,0 +1,132 @@
+---
+- hosts: localhost
+  tasks:
+    - name: Install homebrew
+      include_role:
+        name: geerlingguy.mac.homebrew
+
+    - name: Make sure homebrew bin is in path
+      ansible.builtin.lineinfile:
+        path: /etc/paths
+        state: present
+        line: '/opt/homebrew/bin'
+      become: true
+      become_user: root
+
+    - name: 'add custom homebrew repos'
+      community.general.homebrew_tap:
+        name: [
+          homebrew/cask-versions,
+          thoughtbot/formulae,
+          hashicorp/tap,
+        ]
+
+    - name: Install core packages via brew casks
+      community.general.homebrew_cask:
+        name: "{{ item }}"
+      ignore_errors: yes
+      with_items:
+        - docker
+        - slack
+        - visual-studio-code
+        - lens
+
+
+    - name: "Install homebrew packages"
+      community.general.homebrew:
+        name: [
+          'awscli',
+          'curl',
+          'htop',
+          'imagemagick@6',
+          'kubectx',
+          'kubernetes-cli',
+          'kubernetes-helm',
+          'libtool',
+          'libxslt',
+          'libyaml',
+          'mas',
+          'openssl' ,
+          'pkg-config',
+          'postgresql',
+          'rcm',
+          'readline',
+          'unixodbc',
+          'unzip',
+          'watchman',
+          'xz',
+          'yarn',
+          'zlib',
+          'nodejs',
+          'hashicorp/tap/terraform',
+          'zsh',
+          'cowsay',
+          'lolcat',
+          'fortune'
+        ]
+        state: present
+        update_homebrew: yes
+
+    # - name: "Install from Mac app store"
+    #   shell: mas install {{ item }}
+    #   with_items:
+    #     - 497799835 # xcode
+
+    - name: Get the path to ZSH
+      become: false
+      local_action: command which zsh
+      register: zsh_path
+
+    - name: "Ensure homebrew zsh is in allowed shells"
+      lineinfile:
+        path: /etc/shells
+        line: "{{ zsh_path.stdout }}"
+      become: true
+
+    - name: Install Oh My ZSH
+      shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+      args:
+        creates: "/Users/{{ lookup('env', 'USER') }}/.oh-my-zsh"
+
+    - name: Set ZSH as the default shell
+      shell: chsh -s $(which zsh) {{ lookup('env', 'USER') }}
+      become: true
+
+    - name: "Create a default ZSH configuration"
+      template:
+        src: templates/.zshrc.j2
+        dest: /Users/{{ lookup('env', 'USER') }}/.zshrc
+        owner: "{{ lookup('env', 'USER') }}"
+        force: yes
+
+
+
+
+
+    # # Add something which ensures path is set here
+    # - name: Install VSCode extensions
+    #   shell: code --install-extension {{ item }}
+    #   with_items:
+    #     - apollographql.vscode-apollo
+    #     - bradlc.vscode-tailwindcss
+    #     - castwide.solargraph
+    #     - clinyong.vscode-css-modules
+    #     - eamodio.gitlens
+    #     - jakebecker.elixir-ls
+    #     - kaiwood.endwise
+    #     - karunamurti.haml
+    #     - ms-vscode-remote.vscode-remote-extensionpack
+    #     - ms-vscode.vscode-typescript-tslint-plugin
+    #     - msjsdiag.debugger-for-chrome
+    #     - rebornix.ruby
+    #     - richie5um2.vscode-sort-json
+    #     - Tyriar.sort-lines
+    #     - vscodevim.vim
+    #     - wholroyd.jinja
+    #     - wingrunr21.vscode-ruby
+    #     - xabikos.javascriptsnippets
+    #     - streetsidesoftware.code-spell-checker
+    #     - fabiospampinato.vscode-todo-plus
+
+
+
